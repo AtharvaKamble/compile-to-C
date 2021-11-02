@@ -1,2 +1,3 @@
-export * from './lib/async';
-export * from './lib/number';
+import Lexer from './lib/lexer';
+
+console.log(Lexer);
