@@ -8,6 +8,19 @@ export class Token implements TypeToken {
     this.text = text;
     this.code = code;
   }
+
+  static isKeyword(tokenText): number | null {
+    for (const code in TokenCode) {
+      if (
+        code === tokenText &&
+        parseInt(TokenCode[code]) >= 100 &&
+        parseInt(TokenCode[code]) < 200
+      )
+        return parseInt(TokenCode[code]);
+    }
+
+    return null;
+  }
 }
 
 export enum TokenCode {
