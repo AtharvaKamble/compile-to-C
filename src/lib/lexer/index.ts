@@ -1,6 +1,9 @@
 import { TypeToken } from '@compiler/shared/types';
 
+import { isAlphabet, isAlphaNumeric } from '../../shared/string';
+
 import { Token, TokenCode } from './token';
+
 class Lexer {
   source: string;
   currentChar: string;
@@ -33,9 +36,33 @@ class Lexer {
     return this.source.charAt(this.currentPos + 1);
   }
 
-  getToken() {
+  getToken(): TypeToken {
     this.skipWhiteSpace();
     let token: TypeToken;
+    let tokenText: string;
+    const stringStartPos: number = this.currentPos;
+
+    // Pick out identifiers or a keyword
+    if (isAlphabet(this.currentChar)) {
+      const startIndex: number = this.currentPos;
+
+      while (isAlphaNumeric(this.peek())) {
+        this.nextChar();
+      }
+
+      tokenText = this.source.slice(startIndex, this.currentPos + 1);
+      const keywordCode = Token.isKeyword(tokenText);
+
+      if (keywordCode) {
+        const token = new Token(tokenText, keywordCode);
+        this.nextChar();
+        return token;
+      } else {
+        const token = new Token(tokenText, TokenCode.IDENT);
+        this.nextChar();
+        return token;
+      }
+    }
 
     switch (this.currentChar) {
       // Addition
@@ -116,22 +143,24 @@ class Lexer {
         token = new Token(this.currentChar, TokenCode.LT);
         break;
       // String feature prototype
-      //   case '^':
-      //     this.nextChar();
-      //     const start: number = this.currentPos;
+      case '^':
+        this.nextChar();
+        while (this.currentChar !== `^`) {
+          if (
+            this.currentChar === '\r' ||
+            this.currentChar === '\n' ||
+            this.currentChar === '\t'
+          ) {
+            this.exit(`Illegal character in string -> ${this.currentChar}`);
+          }
+          this.nextChar();
+        }
 
-      //     while (this.currentChar !== `^`) {
-      //       if (this.currentChar === '\\' || this.currentChar === '%') {
-      //         this.exit(`Illegal character in string -> ${this.currentChar}`);
-      //       }
-      //       this.nextChar();
-      //     }
-
-      //     token = new Token(
-      //       this.source.slice(start, this.currentPos),
-      //       TokenCode.STRING
-      //     );
-      //     break;
+        token = new Token(
+          this.source.slice(stringStartPos + 1, this.currentPos),
+          TokenCode.STRING
+        );
+        break;
 
       default:
         this.exit(`Unknown character -> ${this.currentChar}`);
